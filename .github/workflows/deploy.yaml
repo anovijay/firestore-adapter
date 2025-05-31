@@ -2,33 +2,41 @@ name: Deploy to Cloud Run
 
 on:
   push:
-    branches:
-      - main     # or your desired branch
+    branches: [ main ]  # Change this if your main branch has a different name
 
 jobs:
   deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
       with:
-        project_id: ${{ secrets.GCP_PROJECT }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
         service_account_key: ${{ secrets.GCP_SA_KEY }}
         export_default_credentials: true
 
-    - name: Build and push Docker image
+    - name: Configure Docker for GCR
+      run: gcloud auth configure-docker
+
+    - name: Build Docker image
       run: |
-        gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT }}/${{ secrets.CLOUD_RUN_SERVICE }}
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/firestore-adapter .
+
+    - name: Push to GCR
+      run: |
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/firestore-adapter
 
     - name: Deploy to Cloud Run
       run: |
-        gcloud run deploy ${{ secrets.CLOUD_RUN_SERVICE }} \
-          --image gcr.io/${{ secrets.GCP_PROJECT }}/${{ secrets.CLOUD_RUN_SERVICE }} \
-          --region ${{ secrets.GCP_REGION }} \
+        gcloud run deploy firestore-adapter \
+          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/firestore-adapter \
           --platform managed \
-          --service-account mailservice-sa@${{ secrets.GCP_PROJECT }}.iam.gserviceaccount.com \
-          --allow-unauthenticated
+          --region europe-west1 \
+          --allow-unauthenticated \
+          --service-account rhea-app-sa@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
+          --port 8080
