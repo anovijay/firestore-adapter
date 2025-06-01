@@ -28,3 +28,19 @@ steps:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+    - 'run'
+    - 'services'
+    - 'add-iam-policy-binding'
+    - 'firestore-adapter'
+    - '--region'
+    - 'europe-west1'
+    - '--platform'
+    - 'managed'
+    - '--member'
+    - 'allUsers'
+    - '--role'
+    - 'roles/run.invoker'
