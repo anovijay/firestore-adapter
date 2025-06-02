@@ -26,7 +26,7 @@ steps:
       - --port
       - '8080'
 
-  # Step 4: Wait for deployment to stabilize (optional but recommended)
+  # Step 4: Wait for deployment to stabilize
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
@@ -35,23 +35,19 @@ steps:
         echo "Waiting for service to stabilize..."
         sleep 30
 
-options:
-  logging: CLOUD_LOGGING_ONLY
-
-
-  # Step 5: Sanity check (FIXED INDENTATION)
+  # Step 5: Sanity check
   - name: 'curlimages/curl'
     entrypoint: 'sh'
     args:
       - '-c'
       - |
         echo "Running sanity check..."
-        curl -sSf "https://firestore-adapter-317624663818.europe-west1.run.app/health" || exit 1# 
+        curl -sSf "https://firestore-adapter-317624663818.europe-west1.run.app/health" || exit 1
 
-# Use Cloud Logging
+# Options
 options:
   logging: CLOUD_LOGGING_ONLY
 
-# Substitutions to keep region configurable
+# Substitutions
 substitutions:
   _REGION: europe-west1
