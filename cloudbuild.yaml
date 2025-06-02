@@ -1,5 +1,13 @@
 steps:
   # Step 1: Build Docker image
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: bash
+  args:
+    - -c
+    - |
+      echo "Configuring Docker authentication for Artifact Registry..."
+      gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter', '.']
 
