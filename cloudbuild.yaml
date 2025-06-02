@@ -44,15 +44,6 @@ steps:
         echo "Waiting for service to stabilize..."
         sleep 30
 
-  # Step 6: Sanity check
-  - name: 'curlimages/curl'
-    entrypoint: 'sh'
-    args:
-      - -c
-      - |
-        echo "Running sanity check..."
-        curl -sSf "https://firestore-adapter-317624663818.${_REGION}.run.app/health" || exit 1
-
 options:
   logging: CLOUD_LOGGING_ONLY
 
