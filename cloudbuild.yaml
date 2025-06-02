@@ -43,8 +43,8 @@ steps:
       - '--role'
       - 'roles/run.invoker'
 
-  # Step 5: Sanity check with retry
-  -   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  # Step 5: Sanity check with retry loop
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
       - -c
@@ -75,7 +75,6 @@ steps:
 
         echo "❌ Sanity check failed after $MAX_RETRIES attempts."
         exit 1
-
 
 options:
   logging: CLOUD_LOGGING_ONLY
