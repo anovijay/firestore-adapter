@@ -1,21 +1,22 @@
 steps:
-  # Step 1: Build Docker image
+  # Step 1: Authenticate Docker with Artifact Registry
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: bash
-  args:
-    - -c
-    - |
-      echo "Configuring Docker authentication for Artifact Registry..."
-      gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        echo "Configuring Docker authentication for Artifact Registry..."
+        gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
 
+  # Step 2: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter', '.']
 
-  # Step 2: Push Docker image to Artifact Registry
+  # Step 3: Push Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter']
 
-  # Step 3: Deploy to Cloud Run
+  # Step 4: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -34,20 +35,20 @@ steps:
       - --port
       - '8080'
 
-  # Step 4: Wait for deployment to stabilize
+  # Step 5: Wait before sanity check
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
-      - '-c'
+      - -c
       - |
         echo "Waiting for service to stabilize..."
         sleep 30
 
-  # Step 5: Sanity check
+  # Step 6: Sanity check
   - name: 'curlimages/curl'
     entrypoint: 'sh'
     args:
-      - '-c'
+      - -c
       - |
         echo "Running sanity check..."
         curl -sSf "https://firestore-adapter-317624663818.${_REGION}.run.app/health" || exit 1
