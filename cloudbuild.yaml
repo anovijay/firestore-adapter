@@ -17,7 +17,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/firestore-adapter'
       - '--region'
-      - 'europe-west1'
+      - '${_REGION}'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
@@ -26,7 +26,7 @@ steps:
       - '--port'
       - '8080'
 
-  # Step 4: Grant public (unauthenticated) access
+  # Step 4: Allow unauthenticated users to invoke the service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -35,7 +35,7 @@ steps:
       - 'add-iam-policy-binding'
       - 'firestore-adapter'
       - '--region'
-      - 'europe-west1'
+      - '${_REGION}'
       - '--platform'
       - 'managed'
       - '--member'
@@ -43,16 +43,21 @@ steps:
       - '--role'
       - 'roles/run.invoker'
 
-  # Step 5: Sanity check with retry loop
-  - # Step 5: Sanity check - curl /health
-- name: 'curlimages/curl'
-  entrypoint: 'sh'
-  args:
-    - '-c'
-    - |
-      echo "Running sanity check..."
-      curl -v "https://firestore-adapter-317624663818.europe-west1.run.app/health"
+  # Step 5: Sanity check (curl the /health endpoint)
+  - name: 'curlimages/curl'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        echo "🔍 Sanity Check: Hitting /health endpoint"
+        SERVICE_URL="https://firestore-adapter-$PROJECT_NUMBER.${_REGION}.run.app"
+        echo "Health Check URL: $SERVICE_URL/health"
+        curl -v --fail "$SERVICE_URL/health"
 
-
+# Use Cloud Logging
 options:
   logging: CLOUD_LOGGING_ONLY
+
+# Substitutions to keep region configurable
+substitutions:
+  _REGION: europe-west1
