@@ -1,11 +1,11 @@
 steps:
   # Step 1: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'europe-west1-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter', '.']
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter', '.']
 
   # Step 2: Push Docker image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'europe-west1-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter']
+    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter']
 
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -15,9 +15,9 @@ steps:
       - deploy
       - firestore-adapter
       - --image
-      - europe-west1-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter
       - --region
-      - europe-west1
+      - ${_REGION}
       - --platform
       - managed
       - --allow-unauthenticated
@@ -42,13 +42,10 @@ steps:
       - '-c'
       - |
         echo "Running sanity check..."
-        curl -sSf "https://firestore-adapter-317624663818.europe-west1.run.app/health" || exit 1
-
-# Options List
+        curl -sSf "https://firestore-adapter-317624663818.${_REGION}.run.app/health" || exit 1
 
 options:
   logging: CLOUD_LOGGING_ONLY
 
-# Substitutions
 substitutions:
   _REGION: europe-west1
