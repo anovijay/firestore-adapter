@@ -44,7 +44,7 @@ steps:
         echo "Running sanity check..."
         curl -sSf "https://firestore-adapter-317624663818.europe-west1.run.app/health" || exit 1
 
-# Options
+# Options Listed
 options:
   logging: CLOUD_LOGGING_ONLY
 
