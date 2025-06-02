@@ -44,7 +44,7 @@ steps:
       - 'roles/run.invoker'
 
   # Step 5: Sanity check with retry
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  -   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
       - -c
@@ -54,7 +54,7 @@ steps:
         SERVICE_URL=$(gcloud run services describe firestore-adapter \
           --region europe-west1 \
           --platform managed \
-          --format="value(status.url)")
+          --format='value(status.url)')
 
         echo "🌐 Service URL: $SERVICE_URL"
 
@@ -75,6 +75,7 @@ steps:
 
         echo "❌ Sanity check failed after $MAX_RETRIES attempts."
         exit 1
+
 
 options:
   logging: CLOUD_LOGGING_ONLY
