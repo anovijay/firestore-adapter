@@ -43,7 +43,14 @@ steps:
       - '--role'
       - 'roles/run.invoker'
 
-  # Step 5: Sanity check (curl the /health endpoint)
+  # Step 5: Sanity check (FIXED INDENTATION)
+  - name: 'curlimages/curl'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        echo "Running sanity check..."
+        curl -sSf "https://firestore-adapter-317624663818.europe-west1.run.app/health" || exit 1# 
 
 # Use Cloud Logging
 options:
