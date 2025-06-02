@@ -44,37 +44,15 @@ steps:
       - 'roles/run.invoker'
 
   # Step 5: Sanity check with retry loop
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        echo "🧪 Running sanity check on deployed service..."
+  - # Step 5: Sanity check - curl /health
+- name: 'curlimages/curl'
+  entrypoint: 'sh'
+  args:
+    - '-c'
+    - |
+      echo "Running sanity check..."
+      curl -v "https://firestore-adapter-317624663818.europe-west1.run.app/health"
 
-        SERVICE_URL=$(gcloud run services describe firestore-adapter \
-          --region europe-west1 \
-          --platform managed \
-          --format='value(status.url)')
-
-        echo "🌐 Service URL: $SERVICE_URL"
-
-        MAX_RETRIES=5
-        DELAY=5
-
-        for i in $(seq 1 $MAX_RETRIES); do
-          echo "⏳ Attempt $i: Checking $SERVICE_URL/health ..."
-          STATUS=$(curl -s -o response.txt -w "%{http_code}" "$SERVICE_URL/health")
-          if [[ "$STATUS" == "200" ]]; then
-            echo "✅ /health is live!"
-            cat response.txt
-            exit 0
-          fi
-          echo "❌ Not ready yet (status $STATUS). Retrying in $DELAY seconds..."
-          sleep $DELAY
-        done
-
-        echo "❌ Sanity check failed after $MAX_RETRIES attempts."
-        exit 1
 
 options:
   logging: CLOUD_LOGGING_ONLY
