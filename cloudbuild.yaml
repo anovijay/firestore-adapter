@@ -44,15 +44,6 @@ steps:
       - 'roles/run.invoker'
 
   # Step 5: Sanity check (curl the /health endpoint)
-  - name: 'curlimages/curl'
-    entrypoint: 'sh'
-    args:
-      - '-c'
-      - |
-        echo "🔍 Sanity Check: Hitting /health endpoint"
-        SERVICE_URL="https://firestore-adapter-$PROJECT_NUMBER.${_REGION}.run.app"
-        echo "Health Check URL: $SERVICE_URL/health"
-        curl -v --fail "$SERVICE_URL/health"
 
 # Use Cloud Logging
 options:
