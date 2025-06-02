@@ -34,7 +34,7 @@ steps:
       - --port
       - '8080'
 
-  # Step 5: Wait before sanity check -
+  # Step 5: Wait before sanity check 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
