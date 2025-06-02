@@ -16,7 +16,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter']
 
-  # Step 4: Deploy to Cloud Run
+  # Step 4: Deploy to Cloud Run (Authenticated access)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -29,7 +29,6 @@ steps:
       - ${_REGION}
       - --platform
       - managed
-      - --allow-unauthenticated
       - --service-account
       - rhea-app-sa@$PROJECT_ID.iam.gserviceaccount.com
       - --port
