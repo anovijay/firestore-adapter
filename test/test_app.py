@@ -7,10 +7,6 @@ import pytest
 import sys
 import os
 
-print("\n=== PYTHON sys.path BEGIN ===")
-for idx, p in enumerate(sys.path):
-    print(f"{idx:2d}: {p!r}")
-print("=== PYTHON sys.path END ===\n")
 
 from app import create_app   # ← This is where pytest was failing
 
