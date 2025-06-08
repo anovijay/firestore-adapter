@@ -1,3 +1,5 @@
+.env
+__pycache__/
+*.pyc
 rhea-app-sa-key.json
 setup_rhea_iam.sh
-.env

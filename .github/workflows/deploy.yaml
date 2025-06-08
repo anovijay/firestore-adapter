@@ -37,6 +37,5 @@ jobs:
           --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/firestore-adapter \
           --platform managed \
           --region europe-west1 \
-          --allow-unauthenticated \
           --service-account rhea-app-sa@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
           --port 8080

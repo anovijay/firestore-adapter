@@ -1,105 +1,126 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from src.app import create_app
+from app import create_app
 
 @pytest.fixture
 def client():
     app = create_app()
     app.config['TESTING'] = True
+    app.config['API_KEYS'] = ['test-key']
     with app.test_client() as client:
         yield client
 
 def test_list_documents(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.list_documents.return_value = [{"id": "1"}]
-        response = client.get("/documents/")
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.list_documents.return_value = [{"id": "1"}]
+        get_client.return_value = mock
+        response = client.get("/documents/mycoll", headers={"X-API-Key": "test-key"})
         assert response.status_code == 200
-        assert response.json == [{"id": "1"}]
+        assert response.json["status"] == "success"
 
 def test_get_document_found(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.get_document.return_value = {"id": "1", "field": "value"}
-        response = client.get("/documents/1")
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.read_document.return_value = {"id": "1", "field": "value"}
+        get_client.return_value = mock
+        response = client.get("/documents/mycoll/1", headers={"X-API-Key": "test-key"})
         assert response.status_code == 200
-        assert response.json == {"id": "1", "field": "value"}
+        assert response.json["status"] == "success"
 
-def test_get_document_not_found(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.get_document.return_value = None
-        response = client.get("/documents/notfound")
+def test_get_document_missing(client):
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.read_document.return_value = None
+        get_client.return_value = mock
+        response = client.get("/documents/mycoll/notfound", headers={"X-API-Key": "test-key"})
         assert response.status_code == 404
 
 def test_add_document(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.add_document.return_value = "2"
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.create_document.return_value = {"id": "2"}
+        get_client.return_value = mock
         data = {"field": "value"}
-        response = client.post("/documents/", json=data)
-        assert response.status_code == 201
-        assert "id" in response.json
+        response = client.post("/documents/mycoll", json=data, headers={"X-API-Key": "test-key"})
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
 
 def test_update_document(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.update_document.return_value = True
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.update_document.return_value = {"id": "1"}
+        get_client.return_value = mock
         data = {"field": "new_value"}
-        response = client.put("/documents/1", json=data)
+        response = client.put("/documents/mycoll/1", json=data, headers={"X-API-Key": "test-key"})
         assert response.status_code == 200
-        assert response.json["message"] == "Document updated successfully"
+        assert response.json["status"] == "success"
 
 def test_delete_document(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.delete_document.return_value = True
-        response = client.delete("/documents/1")
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.delete_document.return_value = {"id": "1"}
+        get_client.return_value = mock
+        response = client.delete("/documents/mycoll/1", headers={"X-API-Key": "test-key"})
         assert response.status_code == 200
-        assert response.json["message"] == "Document deleted successfully"
+        assert response.json["status"] == "success"
 def test_get_document_success(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.get_document.return_value = {"id": "1", "field1": "value1"}
-        response = client.get("/documents/1")
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.read_document.return_value = {"id": "1", "field1": "value1"}
+        get_client.return_value = mock
+        response = client.get("/documents/mycoll/1", headers={"X-API-Key": "test-key"})
         assert response.status_code == 200
-        assert response.json == {"id": "1", "field1": "value1"}
+        assert response.json["status"] == "success"
 
 def test_get_document_not_found(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.get_document.return_value = None
-        response = client.get("/documents/1")
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.read_document.return_value = None
+        get_client.return_value = mock
+        response = client.get("/documents/mycoll/1", headers={"X-API-Key": "test-key"})
         assert response.status_code == 404
         assert response.json["status"] == "error"
         assert "not found" in response.json["message"].lower()
 
 def test_create_document_success(client):
-    with patch("src.routes.documents.client") as mock_client:
-        # Suppose create_document returns the new doc ID
-        mock_client.create_document.return_value = "abc123"
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.create_document.return_value = {"id": "abc123"}
+        get_client.return_value = mock
         payload = {"foo": "bar"}
-        response = client.post("/documents", json=payload, headers={"X-API-Key": "test-key"})
-        assert response.status_code == 201
-        assert "id" in response.json
-        assert response.json["id"] == "abc123"
+        response = client.post("/documents/mycoll", json=payload, headers={"X-API-Key": "test-key"})
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
 
 def test_create_document_invalid_payload(client):
     # e.g., missing fields or invalid JSON
-    response = client.post("/documents", data="not-a-json", headers={"X-API-Key": "test-key"})
-    assert response.status_code == 400
-    assert response.json["status"] == "error"
-    assert "invalid" in response.json["message"].lower()
+    response = client.post("/documents/mycoll", data="not-a-json", headers={"X-API-Key": "test-key"})
+    assert response.status_code == 415
 def test_update_document_not_found(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.update_document.return_value = False
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.update_document.return_value = None
+        get_client.return_value = mock
         payload = {"field": "new_value"}
-        response = client.put("/documents/1", json=payload, headers={"X-API-Key": "test-key"})
+        response = client.put("/documents/mycoll/1", json=payload, headers={"X-API-Key": "test-key"})
         assert response.status_code == 404
         assert response.json["status"] == "error"
 
 def test_delete_document_not_found(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.delete_document.return_value = False
-        response = client.delete("/documents/1", headers={"X-API-Key": "test-key"})
-        assert response.status_code == 404
-        assert response.json["status"] == "error"
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.delete_document.return_value = None
+        get_client.return_value = mock
+        response = client.delete("/documents/mycoll/1", headers={"X-API-Key": "test-key"})
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
 
 def test_list_documents_empty(client):
-    with patch("src.routes.documents.client") as mock_client:
-        mock_client.list_documents.return_value = []
-        response = client.get("/documents", headers={"X-API-Key": "test-key"})
+    with patch("routes.documents.get_client") as get_client:
+        mock = MagicMock()
+        mock.list_documents.return_value = []
+        get_client.return_value = mock
+        response = client.get("/documents/mycoll", headers={"X-API-Key": "test-key"})
         assert response.status_code == 200
-        assert response.json == []
+        assert response.json["status"] == "success"

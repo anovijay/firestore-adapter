@@ -1,11 +1,4 @@
-import sys
-import os
 import pytest
-
-# test/test_app.py
-
-import sys
-import os
 
 
 from app import create_app   # ← This is where pytest was failing
