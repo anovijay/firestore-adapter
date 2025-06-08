@@ -27,8 +27,7 @@ class FirestoreClient:
             doc_ref.update(data)
             updated_doc = doc_ref.get()
             return {"id": doc_id, **updated_doc.to_dict()}
-        except Exception as e:
-            print(f"Error updating document: {e}")
+        except Exception:
             return None
 
     def delete_document(self, collection, doc_id):
