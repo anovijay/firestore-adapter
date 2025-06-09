@@ -1,4 +1,4 @@
-import os
+import os, sys
 from dotenv import load_dotenv
 
 # Load .env file if present (only affects local dev, safe to call always)
