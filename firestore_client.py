@@ -1,6 +1,6 @@
 from google.cloud import firestore
-from google.api_core.exceptions import NotFound
 import os
+import logging
 
 class FirestoreClient:
     def __init__(self, credentials_path=None):
@@ -34,7 +34,7 @@ class FirestoreClient:
             updated_doc = doc_ref.get()
             return {"id": doc_id, **updated_doc.to_dict()}
         except Exception as e:
-            print(f"Error updating document: {e}")
+            logging.error("Error updating document", exc_info=e)
             return None
 
     def delete_document(self, collection, doc_id):
