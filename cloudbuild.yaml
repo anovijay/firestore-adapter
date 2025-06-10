@@ -8,23 +8,23 @@ steps:
         echo "Configuring Docker authentication for Artifact Registry..."
         gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
 
-  # Step 1.5: Lint
-  - name: 'python:3.11-slim'
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        pip install flake8 pytest >/dev/null
-        flake8 .
+# Step 1.5: Lint
+- name: 'python:3.11-slim'
+  entrypoint: bash
+  args:
+    - -c
+    - |
+      pip install -r requirements.txt flake8 pytest >/dev/null
+      flake8 .
 
-  # Step 1.6: Run tests
-  - name: 'python:3.11-slim'
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        pip install pytest >/dev/null
-        pytest --maxfail=1 --disable-warnings -q
+# Step 1.6: Run tests
+- name: 'python:3.11-slim'
+  entrypoint: bash
+  args:
+    - -c
+    - |
+      pip install -r requirements.txt pytest >/dev/null
+      pytest --maxfail=1 --disable-warnings -q
 
   # Step 2: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
