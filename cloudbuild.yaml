@@ -9,7 +9,7 @@ steps:
         gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
 
   # Step 1.5: Lint
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - name: 'python:3.11-slim'
     entrypoint: bash
     args:
       - -c
@@ -18,11 +18,12 @@ steps:
         flake8 .
 
   # Step 1.6: Run tests
-  - name: 'gcr.io/cloud-builders/gcloud'
+  - name: 'python:3.11-slim'
     entrypoint: bash
     args:
       - -c
       - |
+        pip install pytest >/dev/null
         pytest --maxfail=1 --disable-warnings -q
 
   # Step 2: Build Docker image
@@ -51,7 +52,7 @@ steps:
       - --port
       - '8080'
 
-  # Step 5: Wait before sanity check -
+  # Step 5: Wait before sanity check
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
