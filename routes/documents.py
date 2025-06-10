@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from auth import require_api_key
 from services.filter_builder import FilterBuilder
 from google.cloud import firestore
-from google.api_core.exceptions import InvalidArgument
+from google.api_core.exceptions import InvalidArgument, NotFound
 
 bp = Blueprint("documents", __name__)
 
@@ -100,15 +100,18 @@ def create_document_with_id(collection, doc_id):
 def update_document(collection, doc_id):
     data = request.json
     client = get_client()
-    updated = client.update_document(collection, doc_id, data)
-    if updated:
+    try:
+        updated = client.update_document(collection, doc_id, data)
         return jsonify({"status": "success", "data": updated})
-    else:
+    except NotFound:
         return jsonify({"status": "error", "message": "Document not found"}), 404
 
 @bp.route("/documents/<collection>/<doc_id>", methods=["DELETE"])
 @require_api_key
 def delete_document(collection, doc_id):
     client = get_client()
-    result = client.delete_document(collection, doc_id)
-    return jsonify({"status": "success", "data": result})
+    try:
+        result = client.delete_document(collection, doc_id)
+        return jsonify({"status": "success", "data": result})
+    except NotFound:
+        return jsonify({"status": "error", "message": "Document not found"}), 404
