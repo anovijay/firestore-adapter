@@ -1,6 +1,4 @@
 from flask import request, jsonify, current_app
-
-print("LOADING APP.PY")
 def require_api_key(view_func):
     def wrapper(*args, **kwargs):
         api_key = request.headers.get("X-API-Key")
