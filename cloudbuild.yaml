@@ -8,6 +8,23 @@ steps:
         echo "Configuring Docker authentication for Artifact Registry..."
         gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
 
+  # Step 1.5: Lint
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pip install flake8 pytest >/dev/null
+        flake8 .
+
+  # Step 1.6: Run tests
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        pytest --maxfail=1 --disable-warnings -q
+
   # Step 2: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/firestore-adapter/firestore-adapter', '.']

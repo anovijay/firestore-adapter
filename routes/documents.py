@@ -1,13 +1,13 @@
 from flask import Blueprint, request, jsonify, current_app
 from auth import require_api_key
-from firestore_client import FirestoreClient
+from services.filter_builder import FilterBuilder
 from google.cloud import firestore
 from google.api_core.exceptions import InvalidArgument
 
 bp = Blueprint("documents", __name__)
 
 def get_client():
-    return FirestoreClient(current_app.config["FIRESTORE_CREDENTIALS"])
+    return current_app.extensions["firestore_client"]
 
 @bp.route("/documents/<collection>", methods=["GET"])
 @require_api_key
@@ -17,23 +17,7 @@ def query_documents(collection):
     query = db.collection(collection)
 
     # ---- 1. Build Filters ----
-    filters = []
-    for key, value in request.args.items():
-        if key in {"limit", "offset", "order_by", "fields"}:
-            continue
-        elif key.endswith("_gte"):
-            filters.append((key[:-4], ">=", _auto_type(value)))
-        elif key.endswith("_lte"):
-            filters.append((key[:-4], "<=", _auto_type(value)))
-        elif key.endswith("_gt"):
-            filters.append((key[:-3], ">", _auto_type(value)))
-        elif key.endswith("_lt"):
-            filters.append((key[:-3], "<", _auto_type(value)))
-        elif key.endswith("_in"):
-            # Split comma-separated list
-            filters.append((key[:-3], "in", [_auto_type(x) for x in value.split(",")]))
-        else:
-            filters.append((key, "==", _auto_type(value)))
+    filters = FilterBuilder.build(request.args)
     # Apply filters to Firestore query
     try:
         for f in filters:
@@ -84,16 +68,6 @@ def query_documents(collection):
         "offset": offset,
         "count": len(data)
     })
-
-def _auto_type(val):
-    """Try to convert to int or float, else leave as str."""
-    try:
-        if "." in val:
-            return float(val)
-        else:
-            return int(val)
-    except (ValueError, TypeError):
-        return val
 
 @bp.route("/documents/<collection>", methods=["POST"])
 @require_api_key
