@@ -14,6 +14,12 @@ class FirestoreClient:
         doc_ref.set(data)
         return {"id": doc_ref.id, **data}
 
+    def create_document_with_id(self, collection, doc_id, data):
+        """Create a document using a caller-provided ID."""
+        doc_ref = self.db.collection(collection).document(doc_id)
+        doc_ref.set(data)
+        return {"id": doc_id, **data}
+
     def read_document(self, collection, doc_id):
         doc = self.db.collection(collection).document(doc_id).get()
         if doc.exists:

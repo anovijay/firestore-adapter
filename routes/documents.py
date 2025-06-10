@@ -113,6 +113,14 @@ def read_document(collection, doc_id):
     else:
         return jsonify({"status": "error", "message": "Not found"}), 404
 
+@bp.route("/documents/<collection>/<doc_id>", methods=["POST"])
+@require_api_key
+def create_document_with_id(collection, doc_id):
+    data = request.json
+    client = get_client()
+    result = client.create_document_with_id(collection, doc_id, data)
+    return jsonify({"status": "success", "data": result}), 201
+
 @bp.route("/documents/<collection>/<doc_id>", methods=["PUT"])
 @require_api_key
 def update_document(collection, doc_id):
