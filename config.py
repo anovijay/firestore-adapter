@@ -14,19 +14,15 @@ def load_api_keys_from_secret_manager():
     if os.getenv("API_KEYS"):
         return
 
-    secret_name = os.getenv("API_KEYS_SECRET_NAME")
-    if not secret_name:
-        # Nothing to load
-        return
+    # Always use this secret name when running in Cloud Run
+    secret_name = "fs-adapter-api-key"
 
     project_id = os.getenv("GCP_PROJECT") or os.getenv("PROJECT_ID")
-    if secret_name.startswith("projects/"):
-        secret_path = f"{secret_name}/versions/latest"
-    elif project_id:
-        secret_path = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
-    else:
-        logging.error("API_KEYS_SECRET_NAME set but project ID missing")
+    if not project_id:
+        logging.error("Project ID missing for Secret Manager access")
         return
+
+    secret_path = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
 
     try:
         client = secretmanager.SecretManagerServiceClient()
