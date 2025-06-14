@@ -3,9 +3,38 @@ import sys
 import json
 import logging
 from dotenv import load_dotenv
+from google.cloud import secretmanager
 
 # Load .env file if present (only affects local dev, safe to call always)
 load_dotenv()
+
+
+def load_api_keys_from_secret_manager():
+    """Populate API_KEYS from Secret Manager if not set."""
+    if os.getenv("API_KEYS"):
+        return
+
+    # Always use this secret name when running in Cloud Run
+    secret_name = "fs-adapter-api-key"
+
+    project_id = os.getenv("GCP_PROJECT") or os.getenv("PROJECT_ID")
+    if not project_id:
+        logging.error("Project ID missing for Secret Manager access")
+        return
+
+    secret_path = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+
+    try:
+        client = secretmanager.SecretManagerServiceClient()
+        response = client.access_secret_version(name=secret_path)
+        secret_value = response.payload.data.decode("utf-8")
+        os.environ["API_KEYS"] = secret_value
+        logging.info("Loaded API keys from Secret Manager")
+    except Exception:
+        logging.exception("Failed to load API keys from Secret Manager")
+
+
+load_api_keys_from_secret_manager()
 
 class Config:
     # Comma-separated API keys (string → list)
