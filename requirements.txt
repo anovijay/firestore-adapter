@@ -3,3 +3,4 @@ google-cloud-firestore
 gunicorn
 python-dotenv
 google-cloud-secret-manager
+flask-swagger-ui

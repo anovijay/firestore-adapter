@@ -1,5 +1,7 @@
 # Application factory for the Firestore adapter service
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
+from flask_swagger_ui import get_swaggerui_blueprint
+import os
 from config import Config, validate_config
 from utils.errors import register_error_handlers
 from utils.logging import configure_logging
@@ -18,6 +20,15 @@ def create_app():
 
     from routes.documents import bp as documents_bp
     app.register_blueprint(documents_bp)
+
+    # Serve OpenAPI spec
+    @app.route('/openapi.yaml')
+    def openapi_spec():
+        return send_from_directory(os.path.dirname(__file__), 'openapi.yaml')
+
+    # Swagger UI setup
+    swaggerui_bp = get_swaggerui_blueprint('/docs', '/openapi.yaml')
+    app.register_blueprint(swaggerui_bp, url_prefix='/docs')
 
     register_error_handlers(app)
 
