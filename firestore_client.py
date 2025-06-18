@@ -8,9 +8,13 @@ logger = logging.getLogger(__name__)
 
 class FirestoreClient:
     def __init__(self, credentials_path=None):
-        # Credentials path from config, or rely on GOOGLE_APPLICATION_CREDENTIALS env var
-        if credentials_path:
+        # Only set GOOGLE_APPLICATION_CREDENTIALS if credentials_path is provided and not empty
+        if credentials_path and credentials_path.strip():
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+            logger.info("Using explicit credentials from: %s", credentials_path)
+        else:
+            logger.info("Using default authentication (service account or environment)")
+        
         self.db = firestore.Client()
 
     def create_document(self, collection, data):

@@ -29,6 +29,7 @@ gcloud run deploy $SERVICE_NAME \
   --service-account rhea-app-sa@$PROJECT_ID.iam.gserviceaccount.com \
   --allow-unauthenticated \
   --quiet \
-  --port 8080
+  --port 8080 \
+  --set-env-vars PROJECT_ID=$PROJECT_ID
 
 echo "✅ Deployment complete!"

@@ -51,6 +51,8 @@ steps:
       - rhea-app-sa@$PROJECT_ID.iam.gserviceaccount.com
       - --port
       - '8080'
+      - --set-env-vars
+      - PROJECT_ID=$PROJECT_ID
 
   # Step 5: Wait before sanity check
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'

@@ -50,10 +50,13 @@ def validate_config():
         sys.exit(1)
 
     creds = Config.FIRESTORE_CREDENTIALS
+    
+    # If FIRESTORE_CREDENTIALS is not set, assume we're running in Cloud Run with service account
     if not creds:
-        logging.error("FIRESTORE_CREDENTIALS must be set to a path or JSON string")
-        sys.exit(1)
+        logging.info("FIRESTORE_CREDENTIALS not set, using default authentication (service account)")
+        return
 
+    # If FIRESTORE_CREDENTIALS is set, validate it
     if os.path.isfile(creds):
         return
     try:
