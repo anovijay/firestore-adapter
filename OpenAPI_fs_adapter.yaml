@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: Firestore Adapter API
+  version: "1.0.0"
+  description: |
+    REST API for basic CRUD operations on Google Firestore collections.
+servers:
+  - url: http://localhost:8080
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+    Document:
+      type: object
+      description: Arbitrary JSON document stored in Firestore.
+      additionalProperties: true
+    DocumentList:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        limit:
+          type: integer
+        offset:
+          type: integer
+        count:
+          type: integer
+paths:
+  /:
+    get:
+      summary: Root endpoint
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+  /protected:
+    get:
+      summary: Example protected endpoint
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Authorized access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '401':
+          description: Missing or invalid API key
+  /documents/{collection}:
+    parameters:
+      - in: path
+        name: collection
+        schema:
+          type: string
+        required: true
+        description: Firestore collection name
+    get:
+      summary: Query documents in a collection
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 1000
+          description: Maximum number of documents to return
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+          description: Number of documents to skip
+        - in: query
+          name: order_by
+          schema:
+            type: string
+          description: Comma-separated fields for sorting. Prefix with '-' for descending.
+        - in: query
+          name: fields
+          schema:
+            type: string
+          description: Comma-separated fields to include in the response
+        - in: query
+          name: filter
+          schema:
+            type: string
+          style: form
+          explode: true
+          description: |
+            Additional query parameters can specify filters in the form `field=value`,
+            `field_gt=value`, `field_lt=value`, `field_gte=value`, `field_lte=value`,
+            or `field_in=a,b,c`.
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentList'
+        '400':
+          description: Invalid query parameters
+    post:
+      summary: Create a document with an auto-generated ID
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Document'
+      responses:
+        '200':
+          description: Created document data with ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+  /documents/{collection}/{doc_id}:
+    parameters:
+      - in: path
+        name: collection
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: doc_id
+        schema:
+          type: string
+        required: true
+    get:
+      summary: Read a document by ID
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Document data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '404':
+          description: Document not found
+    post:
+      summary: Create a document with provided ID
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Document'
+      responses:
+        '201':
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+    put:
+      summary: Update an existing document
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Document'
+      responses:
+        '200':
+          description: Updated document data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '404':
+          description: Document not found
+    delete:
+      summary: Delete a document
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Deletion successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+        '404':
+          description: Document not found
