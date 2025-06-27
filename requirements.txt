@@ -1,5 +1,9 @@
-Flask
-google-cloud-firestore
-gunicorn
-python-dotenv
-google-cloud-secret-manager
+Flask==2.3.3
+google-cloud-firestore==2.13.1
+google-cloud-secret-manager==2.18.1
+python-dotenv==1.0.0
+gunicorn==21.2.0
+
+# Testing
+pytest==7.4.3
+requests==2.31.0

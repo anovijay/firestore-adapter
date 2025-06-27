@@ -1,0 +1,927 @@
+openapi: 3.0.3
+info:
+  title: Firestore Adapter API
+  description: |
+    A RESTful API for managing Firestore documents with advanced querying capabilities.
+    
+    This service provides a simplified HTTP interface for Google Cloud Firestore operations,
+    including CRUD operations, advanced filtering, sorting, pagination, and field selection.
+    
+    ## Authentication
+    All endpoints (except `/` and `/health`) require API key authentication via the `X-API-KEY` header.
+    
+    ## Advanced Querying Features
+    - **Filtering**: Use suffixes like `_gte`, `_lte`, `_gt`, `_lt`, `_in` for comparisons
+    - **Sorting**: Use `order_by` parameter with comma-separated fields, prefix with `-` for descending
+    - **Pagination**: Use `limit` and `offset` parameters
+    - **Field Selection**: Use `fields` parameter to return only specific fields
+  version: 1.0.0
+  contact:
+    name: Firestore Adapter API Support
+  license:
+    name: MIT
+servers:
+  - url: https://your-service-url.com
+    description: Production server
+  - url: http://localhost:8080
+    description: Development server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /:
+    get:
+      summary: Get API root information
+      description: Returns basic information about the API service
+      security: []
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: success
+                message: "Firestore Adapter service is running."
+                documentation: "/openapi.yaml"
+
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the service
+      security: []
+      responses:
+        '200':
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: success
+                message: "Service is healthy."
+
+  /protected:
+    get:
+      summary: Protected endpoint example
+      description: Example endpoint that requires API key authentication
+      responses:
+        '200':
+          description: Access granted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /documents/{collection}:
+    get:
+      summary: Query documents in a collection
+      description: |
+        Retrieve documents from a Firestore collection with advanced querying capabilities.
+        
+        **Filtering Examples:**
+        - `age_gte=18` → age >= 18
+        - `status_in=active,pending` → status in ['active', 'pending']  
+        - `name=John` → name == 'John'
+        
+        **Sorting Examples:**
+        - `order_by=created_at` → Sort by created_at ascending
+        - `order_by=-created_at,name` → Sort by created_at desc, then name asc
+        
+        **Pagination:**
+        - `limit=10&offset=20` → Get 10 documents starting from document 20
+        
+        **Field Selection:**
+        - `fields=name,email` → Return only name and email fields
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/OrderBy'
+        - $ref: '#/components/parameters/Fields'
+        - name: field_gte
+          in: query
+          description: 'Filter: field >= value (replace "field" with actual field name)'
+          schema:
+            type: string
+          example: "age_gte=18"
+        - name: field_lte
+          in: query
+          description: 'Filter: field <= value (replace "field" with actual field name)'
+          schema:
+            type: string
+          example: "age_lte=65"
+        - name: field_gt
+          in: query
+          description: 'Filter: field > value (replace "field" with actual field name)'
+          schema:
+            type: string
+          example: "score_gt=100"
+        - name: field_lt
+          in: query
+          description: 'Filter: field < value (replace "field" with actual field name)'
+          schema:
+            type: string
+          example: "price_lt=50"
+        - name: field_in
+          in: query
+          description: 'Filter: field in comma-separated values (replace "field" with actual field name)'
+          schema:
+            type: string
+          example: "status_in=active,pending"
+        - name: field_name
+          in: query
+          description: 'Filter: field == value (any field name for exact match)'
+          schema:
+            type: string
+          example: "name=John"
+      responses:
+        '200':
+          description: Query results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      summary: Create a new document with auto-generated ID
+      description: Creates a new document in the specified collection with an automatically generated ID
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentData'
+            examples:
+              user_document:
+                summary: User document example
+                value:
+                  name: "John Doe"
+                  email: "john@example.com"
+                  age: 30
+                  status: "active"
+              product_document:
+                summary: Product document example
+                value:
+                  name: "Widget"
+                  price: 19.99
+                  category: "electronics"
+                  in_stock: true
+      responses:
+        '201':
+          description: Document created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /documents/{collection}/{doc_id}:
+    get:
+      summary: Retrieve a specific document by ID
+      description: Fetches a single document from the specified collection using its ID
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+      responses:
+        '200':
+          description: Document retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      summary: Create a document with a specific ID
+      description: |
+        Creates a new document in the specified collection with the provided ID.
+        If a document with this ID already exists, it will be overwritten.
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentData'
+      responses:
+        '201':
+          description: Document created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      summary: Update an existing document
+      description: |
+        Updates the specified document with the provided data.
+        Only the fields included in the request body will be updated.
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentData'
+            example:
+              status: "inactive"
+              last_updated: "2024-06-18T10:00:00Z"
+      responses:
+        '200':
+          description: Document updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      summary: Delete a document
+      description: Removes the specified document from the collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+      responses:
+        '200':
+          description: Document deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /collections/{collection}/subcollections/{subcollection}:
+    get:
+      tags:
+        - Subcollections
+      summary: Query all subcollections across parent documents
+      description: |
+        Query all subcollections across all parent documents with filtering and parent data inclusion.
+        Perfect for EmailProcessor use case to get all files with pending extraction.
+        
+        **Key Features:**
+        - Query subcollections across all parent documents in one request
+        - Filter by subcollection fields using `subcollection_` prefix
+        - Include parent document data with `include_parent=true`
+        - Returns structured data with files array and parent context
+        
+        **Example Usage:**
+        
+        Get all files with extraction status 'Scheduled for Extraction':
+        ```
+        /collections/mail-register/subcollections/files?subcollection_extraction_status=Scheduled%20for%20Extraction&include_parent=true
+        ```
+        
+        **Filter Examples:**
+        - `subcollection_extraction_status=Scheduled for Extraction` → Filter by extraction status
+        - `subcollection_file_size_gte=1000` → Files >= 1000 bytes
+        - `subcollection_created_at_lte=2024-01-01` → Files created before date
+        - `subcollection_type_in=pdf,docx` → Files of specific types
+      parameters:
+        - name: collection
+          in: path
+          required: true
+          description: Parent collection name
+          schema:
+            type: string
+          example: "mail-register"
+        - name: subcollection
+          in: path
+          required: true
+          description: Subcollection name
+          schema:
+            type: string
+          example: "files"
+        - name: include_parent
+          in: query
+          description: Include parent document data in response
+          schema:
+            type: boolean
+            default: false
+          example: true
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - name: subcollection_field
+          in: query
+          description: 'Filter subcollection by exact field match (prefix with subcollection_)'
+          schema:
+            type: string
+          example: "subcollection_extraction_status=Scheduled for Extraction"
+        - name: subcollection_field_gte
+          in: query
+          description: 'Filter subcollection field >= value'  
+          schema:
+            type: string
+          example: "subcollection_file_size_gte=1000"
+        - name: subcollection_field_lte
+          in: query
+          description: 'Filter subcollection field <= value'
+          schema:
+            type: string
+          example: "subcollection_created_at_lte=2024-01-01"
+        - name: subcollection_field_in
+          in: query
+          description: 'Filter subcollection field in comma-separated values'
+          schema:
+            type: string
+          example: "subcollection_type_in=pdf,docx,xlsx"
+      responses:
+        '200':
+          description: Cross-subcollection query results
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - data
+                  - limit
+                  - offset
+                  - count
+                  - total_found
+                  - collection
+                  - subcollection
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - files
+                      properties:
+                        id:
+                          type: string
+                          description: Parent document ID (mail_id)
+                          example: "mail_abc123"
+                        files:
+                          type: array
+                          description: Array of matching subcollection documents
+                          items:
+                            $ref: '#/components/schemas/DocumentWithId'
+                      additionalProperties: true
+                      description: Parent document data (when include_parent=true)
+                  limit:
+                    type: integer
+                    example: 100
+                  offset:
+                    type: integer
+                    example: 0
+                  count:
+                    type: integer
+                    description: Number of parent documents returned
+                    example: 5
+                  total_found:
+                    type: integer
+                    description: Total matching parent documents found
+                    example: 25
+                  collection:
+                    type: string
+                    example: "mail-register"
+                  subcollection:
+                    type: string
+                    example: "files"
+              examples:
+                email_files_pending:
+                  summary: Email files pending extraction
+                  value:
+                    status: "success"
+                    data:
+                      - id: "mail_abc123"
+                        from: "sender@example.com"
+                        subject: "Important Document"
+                        received_at: "2024-01-15T10:30:00Z"
+                        files:
+                          - id: "file_xyz789"
+                            filename: "document.pdf"
+                            file_size: 2048
+                            extraction_status: "Scheduled for Extraction"
+                            content_type: "application/pdf"
+                      - id: "mail_def456"
+                        from: "another@example.com"
+                        subject: "Contract Files"
+                        received_at: "2024-01-16T14:20:00Z"
+                        files:
+                          - id: "file_abc123"
+                            filename: "contract.docx"
+                            file_size: 1024
+                            extraction_status: "Scheduled for Extraction"
+                            content_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    limit: 100
+                    offset: 0
+                    count: 2
+                    total_found: 2
+                    collection: "mail-register"
+                    subcollection: "files"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /documents/{collection}/{doc_id}/{subcollection}:
+    get:
+      tags:
+        - Subcollections
+      summary: Query subcollection of a specific document
+      description: |
+        Retrieve documents from a subcollection of a specific parent document.
+        Supports all the same filtering, sorting, and pagination features as the main collection queries.
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+        - name: subcollection
+          in: path
+          required: true
+          description: Subcollection name
+          schema:
+            type: string
+          example: "files"
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/OrderBy'
+        - $ref: '#/components/parameters/Fields'
+        - name: field_filter
+          in: query
+          description: 'Filter subcollection documents (same as collection filters)'
+          schema:
+            type: string
+          example: "extraction_status=Completed"
+      responses:
+        '200':
+          description: Subcollection query results
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/QueryResponse'
+                  - type: object
+                    properties:
+                      parent_collection:
+                        type: string
+                        example: "mail-register"
+                      parent_doc_id:
+                        type: string
+                        example: "mail_abc123"
+                      subcollection:
+                        type: string
+                        example: "files"
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Subcollections
+      summary: Create document in subcollection
+      description: Creates a new document in the specified subcollection with an auto-generated ID
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+        - name: subcollection
+          in: path
+          required: true
+          description: Subcollection name
+          schema:
+            type: string
+          example: "files"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentData'
+            examples:
+              file_document:
+                summary: File document example
+                value:
+                  filename: "document.pdf"
+                  file_size: 2048
+                  content_type: "application/pdf"
+                  extraction_status: "Pending"
+                  upload_date: "2024-01-15T10:30:00Z"
+      responses:
+        '201':
+          description: Subcollection document created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /documents/{collection}/{doc_id}/{subcollection}/{subdoc_id}:
+    get:
+      tags:
+        - Subcollections
+      summary: Get specific subcollection document
+      description: Retrieves a specific document from a subcollection
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+        - name: subcollection
+          in: path
+          required: true
+          description: Subcollection name
+          schema:
+            type: string
+          example: "files"
+        - name: subdoc_id
+          in: path
+          required: true
+          description: Subcollection document ID
+          schema:
+            type: string
+          example: "file_xyz789"
+      responses:
+        '200':
+          description: Subcollection document retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Subcollections
+      summary: Update subcollection document
+      description: Updates an existing document in a subcollection
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+        - name: subcollection
+          in: path
+          required: true
+          description: Subcollection name
+          schema:
+            type: string
+          example: "files"
+        - name: subdoc_id
+          in: path
+          required: true
+          description: Subcollection document ID
+          schema:
+            type: string
+          example: "file_xyz789"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentData'
+            examples:
+              update_extraction_status:
+                summary: Update extraction status
+                value:
+                  extraction_status: "Completed"
+                  extracted_text: "Document content here..."
+                  extraction_date: "2024-01-15T15:45:00Z"
+      responses:
+        '200':
+          description: Subcollection document updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Subcollections
+      summary: Delete subcollection document
+      description: Deletes a document from a subcollection
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/DocIdPath'
+        - name: subcollection
+          in: path
+          required: true
+          description: Subcollection name
+          schema:
+            type: string
+          example: "files"
+        - name: subdoc_id
+          in: path
+          required: true
+          description: Subcollection document ID
+          schema:
+            type: string
+          example: "file_xyz789"
+      responses:
+        '200':
+          description: Subcollection document deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+      description: API key for authentication
+
+  parameters:
+    CollectionPath:
+      name: collection
+      in: path
+      required: true
+      description: The Firestore collection name
+      schema:
+        type: string
+      example: "users"
+
+    DocIdPath:
+      name: doc_id
+      in: path
+      required: true
+      description: The document ID
+      schema:
+        type: string
+      example: "user123"
+
+    Limit:
+      name: limit
+      in: query
+      description: Maximum number of documents to return (1-1000)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 20
+      example: 10
+
+    Offset:
+      name: offset
+      in: query
+      description: Number of documents to skip
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      example: 0
+
+    OrderBy:
+      name: order_by
+      in: query
+      description: Comma-separated fields to order by (prefix with - for descending)
+      schema:
+        type: string
+      examples:
+        ascending:
+          summary: Sort ascending
+          value: "created_at"
+        descending:
+          summary: Sort descending
+          value: "-created_at"
+        multiple:
+          summary: Multiple fields
+          value: "-created_at,name"
+
+    Fields:
+      name: fields
+      in: query
+      description: Comma-separated fields to include in response
+      schema:
+        type: string
+      example: "name,email,status"
+
+  schemas:
+    SuccessResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: "success"
+        message:
+          type: string
+          example: "Operation completed successfully"
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          enum: [error]
+          example: "error"
+        message:
+          type: string
+          example: "Something went wrong"
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: "success"
+        message:
+          type: string
+          example: "Service is healthy."
+        documentation:
+          type: string
+          example: "/openapi.yaml"
+
+    DocumentData:
+      type: object
+      description: |
+        Document data with flexible schema. Can contain any key-value pairs.
+        Values can be strings, numbers, booleans, arrays, or nested objects.
+      additionalProperties: true
+      example:
+        name: "John Doe"
+        email: "john@example.com"
+        age: 30
+        status: "active"
+        tags: ["user", "premium"]
+        preferences:
+          theme: "dark"
+          notifications: true
+
+    DocumentWithId:
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              description: Document ID
+              example: "doc123"
+        - $ref: '#/components/schemas/DocumentData'
+
+    DocumentResponse:
+      type: object
+      required:
+        - status
+        - data
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: "success"
+        data:
+          $ref: '#/components/schemas/DocumentWithId'
+
+    QueryResponse:
+      type: object
+      required:
+        - status
+        - data
+        - limit
+        - offset
+        - count
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: "success"
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentWithId'
+        limit:
+          type: integer
+          description: Query limit used
+          example: 20
+        offset:
+          type: integer
+          description: Query offset used
+          example: 0
+        count:
+          type: integer
+          description: Number of documents returned
+          example: 5
+
+  responses:
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalid_filter:
+              summary: Invalid filter
+              value:
+                status: "error"
+                message: "Invalid filter: age_gte must be a number"
+            invalid_limit:
+              summary: Invalid limit
+              value:
+                status: "error"
+                message: "Limit must be between 1 and 1000"
+
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: "error"
+            message: "API key required"
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: "error"
+            message: "Document not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: "error"
+            message: "Internal server error occurred"
+
+tags:
+  - name: Health
+    description: Health and status endpoints
+  - name: Documents
+    description: Document CRUD operations with advanced querying
+  - name: Subcollections
+    description: Subcollection operations with cross-document querying and parent data inclusion 
