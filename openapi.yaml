@@ -63,20 +63,6 @@ paths:
                 status: success
                 message: "Service is healthy."
 
-  /protected:
-    get:
-      summary: Protected endpoint example
-      description: Example endpoint that requires API key authentication
-      responses:
-        '200':
-          description: Access granted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SuccessResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
   /documents/{collection}:
     get:
       summary: Query documents in a collection
@@ -152,10 +138,19 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
     post:
-      summary: Create a new document with auto-generated ID
-      description: Creates a new document in the specified collection with an automatically generated ID
+      summary: Create a new document
+      description: |
+        Creates a new document in the specified collection.
+        - If a `doc_id` is provided in the query parameters, it will be used as the document's ID.
+        - If no `doc_id` is provided, Firestore will auto-generate one.
       parameters:
         - $ref: '#/components/parameters/CollectionPath'
+        - name: doc_id
+          in: query
+          description: Optional. The specific ID to use for the document.
+          required: false
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -208,32 +203,6 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-    post:
-      summary: Create a document with a specific ID
-      description: |
-        Creates a new document in the specified collection with the provided ID.
-        If a document with this ID already exists, it will be overwritten.
-      parameters:
-        - $ref: '#/components/parameters/CollectionPath'
-        - $ref: '#/components/parameters/DocIdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DocumentData'
-      responses:
-        '201':
-          description: Document created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DocumentResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
     put:
       summary: Update an existing document
       description: |
@@ -257,16 +226,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DocumentResponse'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+                $ref: '#/components/schemas/SuccessResponse'
         '400':
           $ref: '#/components/responses/BadRequestError'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
 
     delete:
-      summary: Delete a document
+      summary: Delete an existing document
       description: Removes the specified document from the collection
       parameters:
         - $ref: '#/components/parameters/CollectionPath'

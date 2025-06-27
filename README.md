@@ -1,80 +1,69 @@
 # Firestore Adapter
 
-A RESTful API service for managing Firestore documents with advanced querying capabilities.
+A RESTful API service for managing Firestore documents with advanced querying capabilities, optimized for serverless deployment on Google Cloud Run.
 
 ## Features
 
-- **CRUD Operations**: Create, read, update, and delete documents
-- **Advanced Querying**: Filter, sort, paginate, and select specific fields
-- **Authentication**: API key-based security
-- **Flexible Schema**: Support for any document structure
-- **Cloud Run Ready**: Optimized for serverless deployment
+- **CRUD Operations**: Create, read, update, and delete documents.
+- **Advanced Querying**: Filter, sort, paginate, and select specific fields.
+- **Secure Authentication**: API key security managed via Google Secret Manager.
+- **Flexible Schema**: Supports any document structure.
+- **Cloud Run Ready**: Containerized and configured for easy deployment.
 
 ## API Documentation
 
-### OpenAPI Specification
-The complete API documentation is available as an OpenAPI 3.0 specification:
-- **Specification file**: `/openapi.yaml`
-- **Interactive documentation**: Use any OpenAPI-compatible tool (Swagger UI, Postman, etc.)
+The complete API documentation is available as an OpenAPI 3.0 specification. The service serves the spec at the `/openapi.yaml` endpoint.
+
+- **Specification file**: `openapi.yaml`
+- **Interactive documentation**: Use any OpenAPI-compatible tool (like Swagger UI or Postman) with the spec.
 
 ## Configuration
-This service uses a hardcoded API key for authentication. For security, you should change the default key before deploying to a production environment.
 
--   **Location**: Edit the `API_KEYS` list in the `config.py` file.
--   **Security**: Ensure this file is properly secured and not publicly exposed.
+API keys for authentication are managed centrally in **Google Cloud Secret Manager**.
 
-### Quick Start
+- **Secret Name**: `fs-adapter-api-key`
+- **Format**: The secret should contain a comma-separated list of valid API keys.
+- **Permissions**: The Cloud Run service account requires the **Secret Manager Secret Accessor** IAM role to read the keys.
 
-1. **Authentication**: Include your API key from `config.py` in the `X-API-KEY` header
-2. **Base URL**: `https://your-service-url.com` (or `http://localhost:8080` for local development)
-
-### Example Requests
-
-```bash
-# Create a document
-curl -X POST https://your-service-url.com/documents/users \
-  -H "X-API-KEY: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "John Doe", "email": "john@example.com"}'
-
-# Query documents with filters
-curl "https://your-service-url.com/documents/users?age_gte=18&status=active" \
-  -H "X-API-KEY: your-api-key"
-
-# Update a document
-curl -X PUT https://your-service-url.com/documents/users/user123 \
-  -H "X-API-KEY: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{"status": "inactive"}'
-```
-
-## Advanced Querying
-
-- **Filters**: `field_gte`, `field_lte`, `field_gt`, `field_lt`, `field_in`, `field=value`
-- **Sorting**: `order_by=field` or `order_by=-field` (descending)
-- **Pagination**: `limit` and `offset` parameters
-- **Field Selection**: `fields=field1,field2`
+The service loads these keys at startup. There is no need to edit local configuration files for keys.
 
 ## Development
 
 ### Local Setup
-```bash
-pip install -r requirements.txt
-export API_KEYS="your-test-key"
-python app.py
-```
+1.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
+2.  **Authenticate with Google Cloud**:
+    Required for accessing secrets and Firestore.
+    ```bash
+    gcloud auth application-default login
+    ```
+3.  **Run the Service**:
+    ```bash
+    python app.py
+    ```
+    The service will run on `http://localhost:8080`.
 
-### Deployment
-Use the included deployment scripts or GitHub Actions workflow for Cloud Run deployment.
+### End-to-End Testing
+The project includes a script to run live tests against a deployed instance of the service. It performs a full CRUD lifecycle to ensure all endpoints are working correctly.
+
+1.  **Set Project ID**:
+    Export the `GCP_PROJECT_ID` environment variable.
+    ```bash
+    export GCP_PROJECT_ID="your-gcp-project-id"
+    ```
+2.  **Run Tests**:
+    ```bash
+    python e2etests.py
+    ```
 
 ## Architecture
 
-This service follows a simplified two-file structure:
-- **`app.py`**: The main Flask application that defines all API endpoints.
-- **`core.py`**: A consolidated module containing authentication and helper logic.
-- **`config.py`**: Manages configuration, including the hardcoded API keys.
-
-- **Environment Variables**: The `API_KEYS` environment variable can also be used to add temporary keys for local testing.
-- **Service Account**: Uses the attached Cloud Run service account for Firestore authentication.
+This service follows a simplified and robust structure:
+- **`app.py`**: The main Flask application factory. It initializes the app, sets up the Firestore client, and defines all API endpoints.
+- **`core.py`**: A consolidated module containing core logic for authentication (API key checks), Firestore interactions, error handling, and logging.
+- **`config.py`**: Manages environment-based configuration but **does not** handle secrets.
+- **`e2etests.py`**: Script for running live end-to-end tests against a deployed service instance.
 
 
